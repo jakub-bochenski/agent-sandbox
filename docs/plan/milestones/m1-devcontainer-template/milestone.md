@@ -5,6 +5,7 @@ Extract the current `.devcontainer/` into a reusable template that other project
 ## Goals
 
 - Split Dockerfile into base + claude images
+- Support two runtime modes: devcontainer (VS Code) and compose (CLI/standalone)
 - Define policy YAML schema for domain allowlists
 - Extract hardcoded domains to policy file
 - Create the "minimal" template (iptables-based, no proxy)
@@ -49,9 +50,20 @@ images/
 
 The base image includes everything needed for sandboxed development except the agent itself.
 
+## Runtime Modes
+
+Two modes are supported, using the same images but different initialization:
+
+| Mode | Use Case | Firewall Init | Config Files |
+|------|----------|---------------|--------------|
+| Devcontainer | VS Code users | `postStartCommand` | devcontainer.json |
+| Compose | CLI/standalone | Entrypoint script | docker-compose.yml |
+
+VS Code bypasses Docker entrypoints, so devcontainer mode requires explicit `postStartCommand`. The entrypoint script is idempotent (checks for existing rules before running).
+
 ## Template Structure
 
-Templates are organized by network approach, then by agent:
+Templates are organized by network approach, then by agent. Each template includes both devcontainer and compose configs:
 
 ```
 devcontainer/templates/
@@ -60,9 +72,9 @@ devcontainer/templates/
 │   └── claude/
 │       ├── .devcontainer/
 │       │   ├── devcontainer.json
-│       │   ├── Dockerfile      # FROM agent-sandbox-claude (or builds locally)
-│       │   ├── policy.yaml     # User-customizable allowlist
-│       │   └── init-firewall.sh
+│       │   └── Dockerfile      # FROM agent-sandbox-claude
+│       ├── docker-compose.yml  # Standalone mode
+│       ├── policy.yaml         # User-customizable allowlist
 │       └── README.md           # Claude-specific notes
 └── proxy-locked/               # m5: proxy-based network control
     └── claude/
@@ -73,20 +85,23 @@ For m1, we create `minimal/claude/`. Other agents (codex, opencode) added in m4.
 
 ## Tasks
 
-### m1.1-policy-schema
+### m1.1-policy-schema ✓
 
 Define the YAML schema for policy files.
 
 - Create example policy.yaml with services + domains structure
 - Document the schema (what services are supported, domain format)
 
-### m1.2-split-images
+### m1.2-split-images ✓
 
-Split current Dockerfile into base + claude.
+Split current Dockerfile into base + claude, add compose support.
 
-- Create images/base/Dockerfile with tools, firewall deps, zsh
+- Create images/base/Dockerfile with tools, firewall deps, zsh, entrypoint
 - Create images/agents/claude/Dockerfile extending base with Claude Code
-- Verify both build successfully
+- Add docker-compose.yml for standalone mode
+- Add images/build.sh for local builds
+- Update devcontainer to use new image structure
+- Verify both modes work (devcontainer and compose)
 
 ### m1.3-extract-policy
 
@@ -106,10 +121,12 @@ Update init-firewall.sh to parse policy.yaml.
 
 ### m1.5-create-template
 
-Create the minimal/claude template structure.
+Create the minimal/claude template structure with both runtime modes.
 
-- Set up devcontainer/templates/minimal/claude/.devcontainer/
-- Include devcontainer.json, Dockerfile, policy.yaml, init-firewall.sh
+- Set up devcontainer/templates/minimal/claude/
+- Include .devcontainer/ with devcontainer.json and Dockerfile
+- Include docker-compose.yml for standalone mode
+- Include policy.yaml (shared by both modes)
 - Template Dockerfile references local image build or placeholder for GHCR
 
 ### m1.6-template-docs
@@ -125,9 +142,10 @@ Document template usage.
 Validate template on a fresh project.
 
 - Copy template to a test project outside this repo
-- Verify devcontainer builds and starts
-- Verify firewall blocks unauthorized domains
-- Verify allowed domains work
+- Test devcontainer mode: verify VS Code workflow works
+- Test compose mode: verify standalone workflow works
+- Verify firewall blocks unauthorized domains in both modes
+- Verify allowed domains work in both modes
 
 ## Dependencies
 
@@ -135,9 +153,10 @@ None (first milestone)
 
 ## Definition of Done
 
-- [ ] Base and claude Dockerfiles exist and build
+- [x] Base and claude Dockerfiles exist and build
+- [x] Both runtime modes work (devcontainer and compose)
 - [ ] Policy YAML schema defined and documented
 - [ ] Firewall script reads from policy file
-- [ ] Template in devcontainer/templates/minimal/ is complete
-- [ ] README documents usage
+- [ ] Template in devcontainer/templates/minimal/ is complete (both modes)
+- [ ] README documents usage for both modes
 - [ ] Template tested on fresh project

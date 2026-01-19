@@ -11,15 +11,33 @@ Target: open source project for the developer community, starting with Claude Co
 
 ## Current State
 
-A working devcontainer exists in `.devcontainer/` that:
-- Uses iptables/ipset for network lockdown
-- Installs Claude Code in a Debian container
-- Runs as non-root user with limited sudo for firewall setup
-- Blocks all outbound except allowlisted domains (GitHub, npm, Anthropic, etc.)
+Two runtime modes are supported:
 
-Empty scaffolding exists for: images, runtime, CLI, and devcontainer templates.
+**Devcontainer mode** (`.devcontainer/`):
+- For VS Code users
+- Firewall initialized via `postStartCommand`
+- Volumes and env vars in devcontainer.json
+
+**Compose mode** (`docker-compose.yml`):
+- For CLI/standalone users
+- Firewall initialized via entrypoint script
+- Same image, different initialization path
+
+Both modes:
+- Use iptables/ipset for network lockdown
+- Run Claude Code in a Debian container
+- Run as non-root user with limited sudo for firewall setup
+- Block all outbound except allowlisted domains (GitHub, npm, Anthropic, etc.)
+
+Image hierarchy established in `images/` (base + claude).
 
 ## Architecture Decisions
+
+**Runtime modes:**
+- **Devcontainer mode**: For VS Code users. Firewall initialized via `postStartCommand` (VS Code bypasses Docker entrypoints).
+- **Compose mode**: For CLI/standalone users. Firewall initialized via entrypoint script with idempotent check.
+
+Both modes use the same images; they differ only in how firewall initialization is triggered.
 
 **Network enforcement approach:**
 - Phase 1: iptables-based (simpler, already working)
@@ -28,6 +46,7 @@ Empty scaffolding exists for: images, runtime, CLI, and devcontainer templates.
 **Image strategy:**
 - Base image with common tools and hardening
 - Agent-specific images extend base with only what that agent needs
+- Entrypoint script handles firewall init for compose mode
 - Pin by digest, update via PRs
 
 ## Milestones
