@@ -134,9 +134,15 @@ volumes:
 
 ## Current State (for session resume)
 
-**Status**: Complete.
+**Status**: Implementation complete, awaiting final testing.
 
 **Branch**: `egress-policy`
+
+**Commits on branch** (4 total):
+1. `3d66557` - Extract egress policy to YAML config file
+2. `4196970` - Refactor policy to layered structure
+3. `f7d948f` - Security fix: require policy from host filesystem
+4. `80d4821` - Add default policies to each image layer
 
 **What's done**:
 - Policy layering implemented across all images
@@ -147,6 +153,134 @@ volumes:
 - Optional host override supported via mount from ~/.config/agent-sandbox/
 - README updated with policy documentation
 - All images work out of the box with no configuration required
+
+**What's pending**:
+- Final testing of all three image layers
+- Create PR after tests pass
+
+## Test Plan
+
+Run these tests on the host machine (not inside a container).
+
+### Prerequisites
+
+```bash
+cd /path/to/agent-sandbox
+git checkout egress-policy
+./images/build.sh
+```
+
+### Test 1: Base image (GitHub only)
+
+```bash
+# Start base image directly
+docker run --rm -it --cap-add=NET_ADMIN --cap-add=NET_RAW \
+  agent-sandbox-base:local /bin/bash -c \
+  "sudo /usr/local/bin/init-firewall.sh && bash"
+
+# Inside container, verify:
+curl -s https://api.github.com/zen          # Should succeed (GitHub allowed)
+curl -s --connect-timeout 5 https://example.com   # Should fail (blocked)
+curl -s --connect-timeout 5 https://api.anthropic.com  # Should fail (not in base policy)
+exit
+```
+
+**Expected**: GitHub works, everything else blocked.
+
+### Test 2: Claude agent image (GitHub + Claude Code)
+
+```bash
+# Start Claude agent image
+docker run --rm -it --cap-add=NET_ADMIN --cap-add=NET_RAW \
+  agent-sandbox-claude:local /bin/bash -c \
+  "sudo /usr/local/bin/init-firewall.sh && bash"
+
+# Inside container, verify:
+curl -s https://api.github.com/zen          # Should succeed
+curl -s https://api.anthropic.com           # Should succeed (Claude Code)
+curl -s --connect-timeout 5 https://example.com   # Should fail
+curl -s --connect-timeout 5 https://marketplace.visualstudio.com  # Should fail (not in Claude policy)
+exit
+```
+
+**Expected**: GitHub and Claude Code endpoints work, VS Code blocked.
+
+### Test 3: Devcontainer image (GitHub + Claude Code + VS Code)
+
+```bash
+# Build devcontainer image
+docker build -t agent-sandbox-devcontainer:test .devcontainer/
+
+# Start devcontainer image
+docker run --rm -it --cap-add=NET_ADMIN --cap-add=NET_RAW \
+  agent-sandbox-devcontainer:test /bin/bash -c \
+  "sudo /usr/local/bin/init-firewall.sh && bash"
+
+# Inside container, verify:
+curl -s https://api.github.com/zen          # Should succeed
+curl -s https://api.anthropic.com           # Should succeed
+curl -s https://marketplace.visualstudio.com  # Should succeed (VS Code)
+curl -s --connect-timeout 5 https://example.com   # Should fail
+curl -s --connect-timeout 5 https://google.com    # Should fail
+exit
+```
+
+**Expected**: GitHub, Claude Code, and VS Code endpoints work. Others blocked.
+
+### Test 4: Docker Compose mode
+
+```bash
+# From repo root
+docker compose up -d
+docker compose exec agent zsh
+
+# Inside container, verify:
+curl -s https://api.github.com/zen          # Should succeed
+curl -s https://api.anthropic.com           # Should succeed
+curl -s --connect-timeout 5 https://example.com   # Should fail
+exit
+
+docker compose down
+```
+
+**Expected**: Same as Claude agent image (compose uses Claude image by default).
+
+### Test 5: Custom policy override
+
+```bash
+# Create minimal custom policy
+mkdir -p ~/.config/agent-sandbox
+cat > ~/.config/agent-sandbox/policy.yaml << 'EOF'
+services:
+  - github
+domains: []
+EOF
+
+# Test with override mounted
+docker run --rm -it --cap-add=NET_ADMIN --cap-add=NET_RAW \
+  -v ~/.config/agent-sandbox/policy.yaml:/etc/agent-sandbox/policy.yaml:ro \
+  agent-sandbox-claude:local /bin/bash -c \
+  "sudo /usr/local/bin/init-firewall.sh && bash"
+
+# Inside container, verify:
+curl -s https://api.github.com/zen          # Should succeed (GitHub in override)
+curl -s --connect-timeout 5 https://api.anthropic.com  # Should fail (not in override)
+exit
+
+# Cleanup
+rm ~/.config/agent-sandbox/policy.yaml
+```
+
+**Expected**: Override replaces baked-in policy completely. Only GitHub allowed.
+
+### Test 6: VS Code devcontainer mode (optional, requires VS Code)
+
+1. Open this repo in VS Code
+2. Command Palette -> Dev Containers: Rebuild and Reopen in Container
+3. Open terminal, verify firewall initialized without errors
+4. Test endpoints as in Test 3
+
+**Expected**: Same as Test 3, plus VS Code features work (extensions, etc).
 
 ## Out of Scope
 

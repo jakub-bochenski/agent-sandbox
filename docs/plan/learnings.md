@@ -14,6 +14,8 @@ Lessons learned during project execution. Review at the start of each planning s
 - devcontainer.json and docker-compose.yml need separate volume/mount configs; they serve different workflows and VS Code reads devcontainer.json directly
 - yq syntax `.foo // [] | .[]` safely iterates arrays that may be missing or null
 - Policy files that control security must live outside the workspace and be mounted read-only; otherwise the agent can modify them and re-run initialization to bypass restrictions
+- Baking default policies into images is safe (agent can't modify the image) and provides good UX (works out of the box)
+- Policy layering via Dockerfile COPY overwrites parent layer's policy cleanly
 
 ## Architecture
 
