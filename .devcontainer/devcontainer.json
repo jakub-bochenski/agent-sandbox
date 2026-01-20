@@ -25,8 +25,8 @@
     // Convenience: Host claude.md and settings.json injected into the volume path
     "source=${localEnv:HOME}/.claude/CLAUDE.md,target=/home/dev/.claude/CLAUDE.md,type=bind,readonly",
     "source=${localEnv:HOME}/.claude/settings.json,target=/home/dev/.claude/settings.json,type=bind,readonly",
-    // Policy override for devcontainer mode (adds VS Code + Claude Code domains)
-    "source=${localWorkspaceFolder}/.devcontainer/policy.yaml,target=/etc/agent-sandbox/policy.yaml,type=bind,readonly"
+    // Policy override from host (outside workspace for security)
+    "source=${localEnv:HOME}/.config/agent-sandbox/policy.yaml,target=/etc/agent-sandbox/policy.yaml,type=bind,readonly"
   ],
   "containerEnv": {
     "TZ": "${localEnv:TZ:America/Los_Angeles}",

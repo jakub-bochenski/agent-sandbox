@@ -53,7 +53,34 @@ cd agent-sandbox
 
 This builds `agent-sandbox-base:local` and `agent-sandbox-claude:local`.
 
-### 3. Choose your mode
+### 3. Create your policy file
+
+The firewall needs a policy file on your host machine. Create it at `~/.config/agent-sandbox/policy.yaml`:
+
+```bash
+mkdir -p ~/.config/agent-sandbox
+cat > ~/.config/agent-sandbox/policy.yaml << 'EOF'
+services:
+  - github
+
+domains:
+  # VS Code (required for devcontainer mode)
+  - marketplace.visualstudio.com
+  - mobile.events.data.microsoft.com
+  - vscode.blob.core.windows.net
+  - update.code.visualstudio.com
+
+  # Claude Code
+  - api.anthropic.com
+  - sentry.io
+  - statsig.anthropic.com
+  - statsig.com
+EOF
+```
+
+This file lives outside your workspace for security. The agent cannot modify it.
+
+### 4. Choose your mode
 
 #### Option A: Devcontainer (VS Code)
 
@@ -76,6 +103,13 @@ Copy `docker-compose.yml` to your project:
 cp agent-sandbox/docker-compose.yml /path/to/your/project/
 ```
 
+Add the policy mount to your `docker-compose.yml`:
+
+```yaml
+volumes:
+  - ${HOME}/.config/agent-sandbox/policy.yaml:/etc/agent-sandbox/policy.yaml:ro
+```
+
 Then start the container:
 
 ```bash
@@ -84,7 +118,7 @@ docker compose up -d
 docker compose exec agent zsh
 ```
 
-### 4. Authenticate Claude Code (first time only)
+### 5. Authenticate Claude Code (first time only)
 
 From your **host terminal** (not the VS Code integrated terminal):
 
@@ -105,7 +139,7 @@ This triggers the OAuth flow:
 
 Credentials persist in a Docker volume. You only need to do this once per project.
 
-### 5. Run Claude Code
+### 6. Run Claude Code
 
 From inside the container:
 
@@ -123,7 +157,7 @@ docker compose down
 
 ## Network policy
 
-The firewall blocks all outbound by default. Allowed destinations are defined in `/etc/agent-sandbox/policy.yaml`:
+The firewall blocks all outbound by default. Allowed destinations are defined in a policy file mounted from your host machine at `~/.config/agent-sandbox/policy.yaml`.
 
 ```yaml
 services:
@@ -135,43 +169,44 @@ domains:
   # ... etc
 ```
 
-### Policy layering
+### Why host-based policy?
 
-The base image contains a minimal policy (GitHub only). Mode-specific and agent-specific domains are added via policy overrides:
+The policy file lives outside the workspace for security. If it were inside the workspace, the agent could modify it and re-run the firewall to allow exfiltration. By keeping it on the host filesystem (mounted read-only), the agent cannot tamper with it.
 
-| Mode | Policy | Includes |
-|------|--------|----------|
-| **Base image** | `images/base/policy.yaml` | GitHub only |
-| **Devcontainer** | `.devcontainer/policy.yaml` (mounted) | GitHub + VS Code + Claude Code |
-| **Compose** | Base policy (or custom mount) | GitHub only (add domains as needed) |
+### Policy structure
 
-The devcontainer mode automatically mounts its policy override. For compose mode, you can mount a custom policy if you need additional domains.
+The base image contains a minimal fallback policy (GitHub only). Your host policy file overrides this completely:
+
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| **Base image** | `images/base/policy.yaml` | Fallback if no override mounted |
+| **Host override** | `~/.config/agent-sandbox/policy.yaml` | Your custom policy (recommended) |
 
 ### Customizing the policy
 
-To add domains in compose mode, mount your own policy file:
+Edit `~/.config/agent-sandbox/policy.yaml` to add or remove domains:
 
-**docker-compose.yml:**
-```yaml
-volumes:
-  - ${HOME}/.config/agent-sandbox/policy.yaml:/etc/agent-sandbox/policy.yaml:ro
-```
-
-Example custom policy:
 ```yaml
 services:
-  - github
+  - github  # Dynamic IP fetch from api.github.com/meta
 
 domains:
+  # VS Code (for devcontainer mode)
+  - marketplace.visualstudio.com
+  - mobile.events.data.microsoft.com
+  - vscode.blob.core.windows.net
+  - update.code.visualstudio.com
+
   # Claude Code
   - api.anthropic.com
   - sentry.io
   - statsig.anthropic.com
   - statsig.com
+
   # Add your own domains here
 ```
 
-The policy file must be mounted read-only from outside the workspace for security. The agent cannot modify a policy file that lives on your host filesystem.
+Changes take effect on container restart.
 
 ## How it works
 

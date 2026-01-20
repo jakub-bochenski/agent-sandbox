@@ -6,10 +6,10 @@ Merged from original m1.3 (extract policy) and m1.4 (firewall reads policy).
 
 ## Goal
 
-- Create a minimal policy.yaml for the base image
+- Create a minimal policy.yaml for the base image (fallback only)
 - Update init-firewall.sh to parse policy.yaml using yq
-- Bake default policy into image; allow optional override via mount
-- Create mode-specific policy overrides (devcontainer gets VS Code + Claude Code domains)
+- Bake default policy into image; require override via mount from host
+- Policy overrides must come from host filesystem (outside workspace) for security
 
 ## Security Model
 
@@ -40,15 +40,14 @@ domains:
 
 ## Policy Layering
 
-The base image contains a minimal policy. Mode-specific domains are added via overrides:
+The base image contains a minimal fallback policy. Users provide their own policy via host mount:
 
-| Layer | File | Contents |
-|-------|------|----------|
-| Base image | `images/base/policy.yaml` | GitHub service only |
-| Devcontainer | `.devcontainer/policy.yaml` | GitHub + VS Code + Claude Code |
-| Claude Agent image | (future) | GitHub + Claude Code |
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| Base image | `images/base/policy.yaml` | Fallback (GitHub only) |
+| Host override | `~/.config/agent-sandbox/policy.yaml` | User's custom policy |
 
-This keeps the base image agent-agnostic while allowing each mode to add what it needs.
+**Security constraint**: Policy must come from host filesystem, not workspace. If policy were in the workspace, the agent could modify it and re-run the firewall to allow exfiltration.
 
 ## Implementation Plan
 
@@ -123,8 +122,8 @@ volumes:
 - [x] Test: custom policy via mount works
 - [x] Update README with policy override instructions
 - [x] Update milestone plan (merge m1.3 and m1.4 references)
-- [x] Create `.devcontainer/policy.yaml` with VS Code + Claude Code domains
-- [x] Update `.devcontainer/devcontainer.json` to mount policy override
+- [x] Update `.devcontainer/devcontainer.json` to mount policy from host (`~/.config/agent-sandbox/`)
+- [x] Security fix: remove `.devcontainer/policy.yaml` (was inside workspace)
 
 ## Current State (for session resume)
 
@@ -134,13 +133,13 @@ volumes:
 
 **What's done**:
 - Base policy.yaml created (minimal: GitHub service only)
-- Devcontainer policy override created (VS Code + Claude Code domains)
 - Dockerfile updated to copy policy to /etc/agent-sandbox/
-- devcontainer.json updated to mount policy override
+- devcontainer.json updated to mount policy from host (~/.config/agent-sandbox/)
 - init-firewall.sh rewritten to parse policy via yq
-- README updated with policy layering docs
+- README updated with setup instructions and security explanation
 - Milestone plan updated (merged m1.3+m1.4)
 - All tests passing (default policy, blocking, custom override)
+- Security fix: policy must come from host, not workspace
 
 ## Out of Scope
 
