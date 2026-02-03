@@ -51,20 +51,14 @@ docker compose exec agent zsh
 
 ### 4. Authenticate Claude (first run only)
 
-From your **host terminal** (not the IDE integrated terminal, as this will attempt to open a browser and will be unable to make the OAuth callback back into the container):
+Do **not** use the page that automatically opens in your browser. It will try to connect to localhost and fail. Instead:
 
-```bash
-docker compose ps  # find container name
-docker exec -it <container-name> zsh -i -c 'claude'
-```
-
-
-This triggers the OAuth flow:
-
-1. Copy the URL and open it in your browser
+1. Copy the URL and open it in your browser (this URL uses a different flow than the one that opens automatically)
 2. Authorize the application
-3. Paste the authorization code back into the terminal
-4. Type `/exit` to close Claude
+3. Paste the authorization code
+
+[<img src="../../docs/images/claude-auth-vscode-ide.png" alt="Claude authentication from VS Code IDE" width="200"/>](../../docs/images/claude-auth-vscode-ide.png)
+[<img src="../../docs/images/claude-auth-vscode-terminal.png" alt="Claude authentication from VS Code terminal" width="200"/>](../../docs/images/claude-auth-vscode-terminal.png)
 
 Credentials persist in a Docker volume. You only need to do this once per project.
 
