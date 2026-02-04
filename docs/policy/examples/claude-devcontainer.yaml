@@ -4,6 +4,5 @@
 # Copy to: ~/.config/agent-sandbox/policies/claude-devcontainer.yaml
 
 services:
-  - github
   - claude
   - vscode
