@@ -210,7 +210,7 @@ git@github.com:user/repo.git  ->  https://github.com/user/repo.git
 
 **Proxy setup.** Add `github` to allowed services, e.g.:
 ```yaml
- services:
+services:
   - github
   - claude
   - vscode
