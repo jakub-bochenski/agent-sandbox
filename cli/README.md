@@ -39,6 +39,4 @@ cli/
 
 - `AGB_ROOT` - Root directory of agent-sandbox CLI
 - `AGB_LIBDIR` - Library directory (default: `$AGB_ROOT/lib`)
-- `AGB_HOME` - Home directory for configurations (default: `~/.config/agent-sandbox`)
-- `AGB_POLICY_DIR` - Directory for policy files (default: `$AGB_HOME/policies`)
 - `AGB_TEMPLATEDIR` - Directory for templates (default: `$AGB_ROOT/templates`)
