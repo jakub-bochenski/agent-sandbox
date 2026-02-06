@@ -28,13 +28,7 @@ init(){
   fi
   project_path=$(cd "$project_path" && pwd)
 
-  local project_name
-  project_name=$(read_line "Enter project name (empty to use directory name):")
-  if [[ -z "$project_name" ]]; then
-    project_name=$(basename "$project_path")
-  fi
-
-  echo "Configuring project $project_name on path: $project_path" | info
+  echo "Configuring project at: $project_path" | info
 
   local available_agents=(claude copilot)
   local agent
@@ -44,16 +38,17 @@ init(){
   local mode
   mode=$(select_option "Select mode:" "${available_modes[@]}")
 
+  local policy_file="$AGB_PROJECT_DIR/$mode-policy.yaml"
+
   #TODO: preselect services based on agent/mode
-  local policy_file="$AGB_POLICY_DIR/$project_name.yaml"
-  policy "$policy_file"
+  policy "$project_path/$policy_file"
 
   case "$mode" in
     cli)
-      cli "$agent" "$policy_file" "$project_path"
+      cli "$agent" "$project_path" "$policy_file"
       ;;
     devcontainer)
-      devcontainer "$agent" "$policy_file" "$project_path"
+      devcontainer "$agent" "$project_path" "$policy_file"
       ;;
     *)
       echo "Invalid mode selected: $mode" | error

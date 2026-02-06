@@ -4,12 +4,14 @@
 source "$AGB_LIBDIR/require.bash"
 # shellcheck source=select.bash
 source "$AGB_LIBDIR/select.bash"
+# shellcheck source=path.bash
+source "$AGB_LIBDIR/path.bash"
 
 # Customizes a Docker Compose file with policy and optional user configurations.
 # Prompts the user to optionally mount host Claude config, shell customizations, and dotfiles.
 # Args:
 #   $1 - The agent name (e.g., "claude")
-#   $2 - Path to the policy file to mount
+#   $2 - Path to the policy file to mount, relative to the Docker Compose file directory
 #   $3 - Path to the Docker Compose file to modify
 #
 # TODO: images and image tags
@@ -21,7 +23,11 @@ customize_compose_file(){
 
   require yq
 
-  # FIXME $policy_file is an absolute path, should be $HOME so that the file can be shared
+  local compose_dir
+  compose_dir=$(dirname "$compose_file")
+
+  verify_relative_path "$compose_dir" "$policy_file"
+
   policy_file="$policy_file" yq -i \
     '.services.proxy.volumes += [env(policy_file) + ":/etc/mitmproxy/policy.yaml:ro"]' "$compose_file"
 
@@ -40,12 +46,9 @@ customize_compose_file(){
 
   if select_yes_no "Enable shell customizations?"
   then
-    # FIXME $AGB_HOME is an absolute path, should be $HOME so that the file can be shared
-
-    # shellcheck disable=SC2016
     yq -i \
       '.services.agent.volumes += [
-        env(AGB_HOME) + "/shell.d:/home/dev/.config/agent-sandbox/shell.d:ro"
+        env(AGB_HOME_PATTERN) + "/shell.d:/home/dev/.config/agent-sandbox/shell.d:ro"
       ]' "$compose_file"
 
     if select_yes_no "Enable dotfiles?"
