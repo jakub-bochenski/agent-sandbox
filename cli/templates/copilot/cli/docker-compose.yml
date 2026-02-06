@@ -41,6 +41,8 @@ services:
     volumes:
       # Project workspace
       - ./:/workspace
+      # Read-only policy directory
+      - ./.agent-sandbox/:/workspace/.agent-sandbox/:ro
       # Persist Copilot credentials
       - copilot-state:/home/dev/.copilot
       # Persist shell history
