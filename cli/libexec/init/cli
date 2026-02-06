@@ -11,12 +11,12 @@ source "$AGB_LIBDIR/composefile.bash"
 # Copies the docker-compose.yml template and customizes it.
 # Args:
 #   $1 - The agent name (e.g., "claude")
-#   $2 - Path to the policy file
-#   $3 - Path to the project directory
+#   $2 - Path to the project directory
+#   $3 - Path to the policy file (relative to project directory)
 cli(){
   local agent=$1
-  local policy_file=$2
-  local project_path=$3
+  local project_path=$2
+  local policy_file=$3
 
   local compose_file="$project_path/docker-compose.yml"
 

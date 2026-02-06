@@ -16,7 +16,8 @@ source "$AGB_LIBDIR/select.bash"
 # Outputs:
 #   Creates a YAML policy file with services and domains lists
 policy(){
-  local policy_file=${1-"$AGB_POLICY_DIR/$(basename "$PWD").yaml"}
+  local policy_file=$1
+
   require yq
 
   # see images/proxy/addons/enforcer.py
@@ -27,6 +28,8 @@ policy(){
   services=$(select_multiple "Select allowed services" "${available_services[@]}")
 
   domains=$(read_multiline "Enter additional domains to allow")
+
+  mkdir -p "$(dirname -- "$policy_file")"
 
   services="$services" domains="$domains" yq -n '
     .services = (strenv(services) | split("\n") ) |
