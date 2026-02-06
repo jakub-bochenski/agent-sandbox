@@ -10,7 +10,7 @@ Initializes agent-sandbox for a project.
 
 ### `agentbox clean`
 
-Removes the agent-sandbox home directory (`$AGB_HOME`), deleting all policies, configurations, and cached data.
+Removes the agent-sandbox files for a project.
 
 ### `agentbox version`
 
