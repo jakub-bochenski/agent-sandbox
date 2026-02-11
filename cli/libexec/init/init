@@ -40,7 +40,7 @@ init() {
 	local mode
 	mode=$(select_option "Select mode:" "${available_modes[@]}")
 
-	local policy_file="$AGB_PROJECT_DIR/$mode-policy.yaml"
+	local policy_file="$AGB_PROJECT_DIR/policy-$mode-$agent.yaml"
 
 	case "$mode" in
 	cli)
