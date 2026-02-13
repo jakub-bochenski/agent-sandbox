@@ -111,10 +111,9 @@ open_editor() {
 		return 1
 	fi
 
-	# call unquoted, editor can contain arguments
 	if [[ $editor == */open ]]; then
-		$editor --new --wait-apps "$file" </dev/tty >/dev/tty
+		eval "$editor" --new --wait-apps "$file" </dev/tty >/dev/tty
 	else
-		$editor "$file" </dev/tty >/dev/tty
+		eval "$editor" "$file" </dev/tty >/dev/tty
 	fi
 }
