@@ -12,9 +12,9 @@
         "security.promptForRemoteFileProtocolHandling": true,
         "terminal.integrated.defaultProfile.linux": "zsh"
       },
-			"extensions": [
-				"GitHub.copilot-chat"
-			]
+      "extensions": [
+        "GitHub.copilot-chat"
+      ]
     },
     "jetbrains": {
       "settings": {
