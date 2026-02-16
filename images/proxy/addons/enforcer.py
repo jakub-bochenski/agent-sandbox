@@ -69,7 +69,6 @@ SERVICE_DOMAINS = {
         "download.jetbrains.com",
         "download-cf.jetbrains.com",
         "download-cdn.jetbrains.com",
-        "plugins.jetbrains.com",
         "resources.jetbrains.com",
         "cdn.agentclientprotocol.com",
     ],  
