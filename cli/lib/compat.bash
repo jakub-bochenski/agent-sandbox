@@ -16,6 +16,7 @@ then
 
 		local v="${1:-MAPFILE}"
 
+		eval "$v=()"
 		local i=0
 		local line
 		while IFS= read -r line
