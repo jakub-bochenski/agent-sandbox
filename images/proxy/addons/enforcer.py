@@ -58,6 +58,21 @@ SERVICE_DOMAINS = {
        "plugins.jetbrains.com",
        "downloads.marketplace.jetbrains.com",
     ],
+    "jetbrains-ai": [
+        "api.jetbrains.ai",
+        "api.app.prod.grazie.aws.intellij.net",
+        "www.jetbrains.com",
+        "account.jetbrains.com",
+        "oauth.account.jetbrains.com",
+        "frameworks.jetbrains.com",
+        "cloudconfig.jetbrains.com",
+        "download.jetbrains.com",
+        "download-cf.jetbrains.com",
+        "download-cdn.jetbrains.com",
+        "plugins.jetbrains.com",
+        "resources.jetbrains.com",
+        "cdn.agentclientprotocol.com",
+    ],  
 }
 
 
