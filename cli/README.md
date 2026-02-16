@@ -2,6 +2,8 @@
 
 Command-line tool for managing agent-sandbox configurations and Docker Compose setups.
 
+Requires `docker` (and `docker compose`) and [`yq`](https://github.com/mikefarah/yq).
+
 ## Modules and Commands
 
 ### `agentbox init`
