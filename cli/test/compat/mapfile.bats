@@ -65,9 +65,11 @@ line3"
 
 @test "mapfile handles lines with special characters" {
 	local -a result
+	#shellcheck disable=SC2016
 	mapfile -t result < <(printf 'line with $var\nline with "quotes"\nline with \\backslash\n')
 
 	assert_equal "${#result[@]}" 3
+	#shellcheck disable=SC2016
 	assert_equal "${result[0]}" 'line with $var'
 	assert_equal "${result[1]}" 'line with "quotes"'
 	assert_equal "${result[2]}" 'line with \backslash'

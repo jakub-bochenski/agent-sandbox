@@ -68,6 +68,7 @@ To list available commands use: ${BASH_SOURCE[0]} <module> help
 		shift 1
 	fi
 
+	#shellcheck disable=SC2076
 	if [[ "$module" =~ [[:space:]] ]] ||
 		! [[ " ${modules[*]} " =~ " $module " ]]
 	then
