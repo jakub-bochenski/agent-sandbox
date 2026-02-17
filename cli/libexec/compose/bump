@@ -58,7 +58,7 @@ bump_service() {
 		echo "    → Already at latest digest" | info
 	else
 		echo "    → Updating to $new_digest" | info
-		new_digest="$new_digest" yq -i ".services.${service}.image = env(new_digest)" "$compose_file"
+		new_digest="$new_digest" service="$service" yq -i '.services.[env(service)].image = env(new_digest)' "$compose_file"
 	fi
 }
 
