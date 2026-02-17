@@ -47,10 +47,21 @@ Set your Docker credential helper to `osxkeychain` (not `desktop`) in `~/.docker
 
 ### 2. Install agent-sandbox CLI
 
+#### Local install
 ```bash
 git clone https://github.com/mattolson/agent-sandbox.git
 export PATH="$PWD/agent-sandbox/cli/bin:$PATH"
 ```
+
+`yq` is required to edit compose files. Install with `brew install yq`.
+
+#### Docker install
+```bash
+docker pull ghcr.io/mattolson/agent-sandbox-cli
+alias agentbox='docker run --rm -it -v "/var/run/docker.sock:/var/run/docker.sock" -v"$PWD:$PWD" -w"$PWD" -e TERM="$TERM" --network none ghcr.io/mattolson/agent-sandbox-cli'
+```
+
+Using the Docker image disables the editor integration (`vi` installed in the image will be used instead of your host editor).
 
 ### 3. Initialize the sandbox for your project
 
