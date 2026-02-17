@@ -28,9 +28,12 @@ Creates a sandboxed environment for AI coding agents (Claude Code, GitHub Copilo
 
 ## Runtime modes
 
-Each template ships a single `.devcontainer/docker-compose.yml` that works for both devcontainer and CLI usage. A `.env` file at the project root sets `COMPOSE_FILE` so that `docker compose` commands work from the project directory without extra flags.
+The sandbox is implemented as a Docker Compose project with a two-container stack: a proxy sidecar (mitmproxy) and the agent container.
 
-Both modes run a two-container stack: a proxy sidecar (mitmproxy) and the agent container.
+**Devcontainer** mode stores the docker-compose project in the `.devcontainer` directory.
+**CLI** mode stores the docker-compose project in the `.agent-sandbox` directory.
+
+Both modes store the policy files in the `.agent-sandbox` directory.
 
 ## Quick start (macOS + Colima)
 
@@ -46,6 +49,8 @@ colima start --cpu 4 --memory 8 --disk 60
 Set your Docker credential helper to `osxkeychain` (not `desktop`) in `~/.docker/config.json`.
 
 ### 2. Install agent-sandbox CLI
+
+The CLI is a thin wrapper around docker-compose that simplifies the process of initializing and starting the sandbox.
 
 #### Local install
 ```bash
