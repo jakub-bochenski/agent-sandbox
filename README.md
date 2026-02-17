@@ -75,8 +75,14 @@ This prompts you to select the agent type (Claude Code or GitHub Copilot) and mo
 
 **Devcontainer (VS Code / JetBrains):**
 
-- VS Code: Install the Dev Containers extension, then Command Palette -> Dev Containers: Reopen in Container
-- JetBrains: From the Remote Development menu, select "Dev Containers" and choose the configuration
+VS Code:
+1. Install the Dev Containers extension
+2. Command Palette > "Dev Containers: Reopen in Container"
+
+JetBrains (IntelliJ, PyCharm, WebStorm, etc.):
+1. Open your project
+2. From the Remote Development menu, select "Dev Containers"
+3. Select the devcontainer configuration
 
 **CLI (terminal):**
 
@@ -135,33 +141,56 @@ The `.devcontainer/` directory is mounted read-only inside the agent container, 
 
 See [docs/policy/schema.md](./docs/policy/schema.md) for the full policy format reference.
 
-## Shell customization
+## Dotfiles
 
-Two mechanisms for customizing the container environment, both mounted read-only from the host.
+Mount your dotfiles directory to have them auto-linked into `$HOME` at container startup:
 
-### Dotfiles
-
-To enable dotfiles support, choose "yes" when prompted during `agentbox init`. Your dotfiles from `~/.dotfiles` will be auto-linked into `$HOME` at container startup.
-
-The entrypoint recursively walks `~/.dotfiles` and creates symlinks for each file at the corresponding `$HOME` path, creating intermediate directories as needed. For example, `.dotfiles/.config/git/config` becomes `~/.config/git/config`.
-
-Protected paths (`.config/agent-sandbox`) are never overwritten. Docker bind mounts (like individually mounted config files) take precedence over dotfile symlinks.
-
-### Shell.d scripts
-
-To enable shell customizations, choose "yes" when prompted during `agentbox init`. Scripts from `~/.config/agent-sandbox/shell.d/` will be sourced to inject aliases, environment variables, or tool setup. Any `*.sh` files are sourced when zsh starts, before `~/.zshrc`.
-
-Example (`~/.config/agent-sandbox/shell.d/my-aliases.sh`):
-
-```bash
-alias ll='ls -la'
-alias gs='git status'
-export EDITOR=vim
+```yaml
+volumes:
+  - ${HOME}/.config/agent-sandbox/dotfiles:/home/dev/.dotfiles:ro
 ```
 
-Shell.d scripts run from the system-level zshrc (`/etc/zsh/zshrc`), so dotfiles can include a custom `.zshrc` without breaking agent-sandbox functionality.
+The entrypoint recursively walks `~/.dotfiles` and creates symlinks for each file at the corresponding `$HOME` path. Intermediate directories are created as needed.
 
-Both mounts are read-only. The agent cannot modify your host configuration. The `agentbox init` command prompts whether to enable shell customizations and dotfiles when setting up your project.
+For example, if your dotfiles contain:
+```
+.dotfiles/
+  .zshrc
+  .gitconfig
+  .claude/
+    CLAUDE.md
+    settings.json
+  .config/
+    git/config
+    starship.toml
+```
+
+The container will have:
+- `~/.zshrc` -> `~/.dotfiles/.zshrc`
+- `~/.gitconfig` -> `~/.dotfiles/.gitconfig`
+- `~/.claude/CLAUDE.md` -> `~/.dotfiles/.claude/CLAUDE.md`
+- `~/.claude/settings.json` -> `~/.dotfiles/.claude/settings.json`
+- `~/.config/git/config` -> `~/.dotfiles/.config/git/config`
+- `~/.config/starship.toml` -> `~/.dotfiles/.config/starship.toml`
+
+Protected paths (`.config/agent-sandbox`) are never overwritten. Docker bind mounts (like individually mounted `CLAUDE.md`) take precedence over dotfile symlinks.
+
+Shell.d scripts are sourced from the system-level zshrc (`/etc/zsh/zshrc`), which runs before `~/.zshrc`. This means your dotfiles can include a custom `.zshrc` without breaking agent-sandbox functionality.
+
+## Shell Customization
+
+Mount scripts into `~/.config/agent-sandbox/shell.d/` to customize your shell environment. Any `*.sh` files are sourced when zsh starts (before `~/.zshrc`).
+
+```bash
+mkdir -p ~/.config/agent-sandbox/shell.d
+
+cat > ~/.config/agent-sandbox/shell.d/my-aliases.sh << 'EOF'
+alias ll='ls -la'
+alias gs='git status'
+EOF
+```
+
+The `agentbox init` command prompts whether to enable shell customizations when setting up your project.
 
 ## Git configuration
 
@@ -193,6 +222,64 @@ This stores a token in the container's Claude state volume (persists across rebu
 
 ```bash
 gh auth login --with-token < token.txt
+```
+
+## Extending with language stacks
+
+The base image ships installer scripts for common language stacks. Extend the agent image with a custom Dockerfile:
+
+```dockerfile
+FROM ghcr.io/mattolson/agent-sandbox-claude:latest
+USER root
+RUN /etc/agent-sandbox/stacks/python.sh
+RUN /etc/agent-sandbox/stacks/go.sh 1.23.6
+USER dev
+```
+
+Build and use your custom image:
+```bash
+docker build -t my-custom-sandbox .
+agentbox compose edit
+# Update the agent service image to: my-custom-sandbox
+```
+
+Available stacks:
+
+| Stack | Script | Version arg | Default |
+|-------|--------|-------------|---------|
+| Python | `python.sh` | (ignored, uses apt) | System Python 3 |
+| Node.js | `node.sh` | Major version | 22 |
+| Go | `go.sh` | Full version | 1.23.6 |
+| Rust | `rust.sh` | Toolchain | stable |
+
+Each script handles both amd64 and arm64 architectures.
+
+Alternatively, if building from source, use the `STACKS` env var:
+
+```bash
+STACKS="python,go:1.23.6" ./images/build.sh all
+```
+
+## Image Versioning
+
+The `agentbox init` command automatically pulls the latest images and pins them to their digests for reproducibility.
+
+To update to newer image versions later:
+
+```bash
+agentbox compose bump
+```
+
+This pulls the newest versions and updates the compose file with the new pinned digests.
+
+To use locally-built images instead:
+
+```bash
+cd agent-sandbox && ./images/build.sh
+agentbox compose edit
+# Update the images to use:
+#   agent service: agent-sandbox-claude:local
+#   proxy service: agent-sandbox-proxy:local
 ```
 
 ## Security
