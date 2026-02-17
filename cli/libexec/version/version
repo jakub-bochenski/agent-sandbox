@@ -13,18 +13,18 @@ version() {
 	local -r name=${1-"Agent Sandbox"}
 	local -r path=${2-$AGB_ROOT}
 
-	if command -v git &>/dev/null
+	if [[ -s "$path/.version" ]]
+	then
+		local ver
+		ver=$(<"$path/.version")
+		echo "$name $ver" | info
+	elif command -v git &>/dev/null
 	then
 		local date sha
 		date=$(git -C "$path" log -n1 --date=format:%Y%m%d.%H%M%S --format=%cd)
 		sha=$(git -C "$path" describe --abbrev=7 --dirty --always --tags)
 
 		echo "$name $date-$sha" | info
-	elif [[ -s "$path/.version" ]]
-	then
-		local ver
-		ver=$(<"$path/.version")
-		echo "$name $ver" | info
 	else
 		echo "git not found, cannot determine version" | warning
 	fi
