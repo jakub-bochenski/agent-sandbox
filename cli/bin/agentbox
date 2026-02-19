@@ -108,7 +108,10 @@ To list available commands use: ${BASH_SOURCE[0]} <module> help
 		fi
 	fi
 
-	"$AGB_LIBEXECDIR/version/version" "Agent Sandbox"
+	if [[ $module != "version" ]]
+	then
+		"$AGB_LIBEXECDIR/version/version" "Agent Sandbox"
+	fi
 
 	export PATH="$AGB_LIBEXECDIR/$module:$PATH"
 
