@@ -17,7 +17,7 @@ debug() {
 	echo -n '[DEBUG] '
 	tput sgr0
 	cat -
-}
+} >&2
 
 info() {
 	# shellcheck disable=SC2312
@@ -27,7 +27,7 @@ info() {
 	echo -n '[INFO] '
 	tput sgr0
 	cat -
-}
+} >&2
 
 warning() {
 	# shellcheck disable=SC2312
@@ -37,7 +37,7 @@ warning() {
 	echo -n '[WARN] '
 	tput sgr0
 	cat -
-}
+} >&2
 
 error() {
 	# shellcheck disable=SC2312
@@ -47,4 +47,4 @@ error() {
 	echo -n '[ERROR] '
 	tput sgr0
 	cat -
-}
+} >&2
