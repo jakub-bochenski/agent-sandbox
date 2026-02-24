@@ -10,6 +10,22 @@ source "$AGB_LIBDIR/logging.bash"
 
 # Opens the compose file in an editor. Warns if containers need restarting.
 edit() {
+	local no_restart="${AGENTBOX_NO_RESTART:-false}"
+
+	while [[ $# -gt 0 ]]
+	do
+		case $1 in
+		--no-restart)
+			no_restart=true
+			shift
+			;;
+		*)
+			echo "Unknown option: $1" | error
+			return 1
+			;;
+		esac
+	done
+
 	local compose_file
 	compose_file="$(find_compose_file)"
 
@@ -28,8 +44,14 @@ edit() {
 
 		if [[ -n "$running" ]]
 		then
-			echo "Compose file was modified, and you have containers running." | warning
-			echo "To pick up the changes and restart your containers, run: agentbox up -d" | warning
+			if [[ "$no_restart" == "true" ]]
+			then
+				echo "Compose file was modified, and you have containers running." | warning
+				echo "To pick up the changes and restart your containers, run: agentbox up -d" | warning
+			else
+				echo "Compose file was modified. Restarting containers..." | info
+				"$AGB_LIBDIR/run-compose" up -d
+			fi
 		else
 			echo "Compose file was modified." | info
 		fi

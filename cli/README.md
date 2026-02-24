@@ -66,7 +66,10 @@ Displays the current version of agent-sandbox.
 
 ### `agentbox edit compose`
 
-Opens the Docker Compose file in your editor. If you save changes and containers are running, warns you to restart.
+Opens the Docker Compose file in your editor. If you save changes and containers are running, it will restart containers by default to apply the changes.
+
+Options:
+- `--no-restart` — Do not automatically restart containers after changes. When set (or when `AGENTBOX_NO_RESTART=true`), a warning is shown instead with instructions to run `agentbox up -d` manually.
 
 ### `agentbox edit policy`
 
