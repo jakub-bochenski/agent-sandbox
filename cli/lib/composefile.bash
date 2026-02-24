@@ -51,12 +51,12 @@ customize_compose_file() {
 
 	if [[ $ide == "jetbrains" ]]
 	then
-		: "${AGENTBOX_MOUNT_IDEA_READONLY:=false}"
+		: "${AGENTBOX_MOUNT_IDEA_READONLY:=true}"
 	fi
 
 	if [[ $ide == "vscode" ]]
 	then
-		: "${AGENTBOX_MOUNT_VSCODE_READONLY:=false}"
+		: "${AGENTBOX_MOUNT_VSCODE_READONLY:=true}"
 	fi
 
 	local proxy_image_pinned
